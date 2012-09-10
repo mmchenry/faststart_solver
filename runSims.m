@@ -4,7 +4,7 @@ function runSims()
 
   % Set root
   %ROOT = '/home/jims/ascidian/model/solver';
-  ROOT = '/Users/mmchenry/Dropbox/Matlab/faststart_model/solver';
+  ROOT = '/Users/mmchenry/Dropbox/Projects/Phototaxis model/solver';
 
   % Set output
   outfn = [ROOT filesep 'data.mat'];
@@ -16,7 +16,7 @@ function runSims()
   addpath([ROOT filesep '0trans']);
 
   % Prepare standard
-  p = GetParams('default');
+  p = GetParams('botry');
 
   % Modify behavior
   p.behaveModel = 1;

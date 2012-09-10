@@ -1,4 +1,4 @@
-function [trunkParams,finParams,meatParams,ocellParams,kinParams] = getLarva(simParams)
+function [trunkParams,finParams,meatParams,ocellParams,kinParams] = getBotry(simParams)
 % This function returns all of the parameters that describe the 
 % morphology and kinematics of Botrylloides spp.
 %
@@ -39,25 +39,25 @@ function [trunkParams,finParams,meatParams,ocellParams,kinParams] = getLarva(sim
 %    -> density - scalar
 %
 %  kinParams
-%    -> stg1_dur - scalar
-%    -> stg1_kappaMax - scalar
+%    -> kLeft - scalar
+%    -> kRight - scalar
 %    -> mLeft - scalar
 %    -> mRight - scalar
 %    -> thetaAmp - scalar
 %    -> thetaOff - scalar
-%    -> stg2_waveSpeed - scalar
-%    -> stg2_beatFreq - scalar
+%    -> waveSpeed - scalar
+%    -> beatFreq - scalar
 %
 % Units: 10^-4 m, 10^-2 s, 10^-4 g
   
   % Set file locations
   % -----------------------------------------------------    
   ROOT = '/Users/mmchenry/Dropbox/Projects/Phototaxis model/solver';
-  trunk_morpho_file =   [ROOT filesep '0params' filesep '0larva' filesep 'trunk_morpho.mat'];
-  ocell_morpho_file =   [ROOT filesep '0params' filesep '0larva' filesep 'ocell_morpho.mat'];
-  fin_morpho_file =     [ROOT filesep '0params' filesep '0larva' filesep 'fin_morpho.mat'];
-  meat_morpho_file =    [ROOT filesep '0params' filesep '0larva' filesep 'meat_morpho.mat'];
-  kine_morpho_file =    [ROOT filesep '0params' filesep '0larva' filesep 'kine_morpho.mat'];
+  trunk_morpho_file =   [ROOT filesep '0params' filesep '0botry' filesep 'trunk_morpho.mat'];
+  ocell_morpho_file =   [ROOT filesep '0params' filesep '0botry' filesep 'ocell_morpho.mat'];
+  fin_morpho_file =     [ROOT filesep '0params' filesep '0botry' filesep 'fin_morpho.mat'];
+  meat_morpho_file =    [ROOT filesep '0params' filesep '0botry' filesep 'meat_morpho.mat'];
+  kine_morpho_file =    [ROOT filesep '0params' filesep '0botry' filesep 'kine_morpho.mat'];
 
   % Put together trunk data
   % -----------------------------------------------------    

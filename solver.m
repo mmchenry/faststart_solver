@@ -8,6 +8,7 @@ function data = solver(p)
 %    -> timeStart - scalar
 %    -> timeStop - scalar
 %
+%    -> light - column vector x N-time
 %    -> gravity - column vector
 %  
 %    -> fluidDensity - scalar
@@ -24,9 +25,15 @@ function data = solver(p)
 %    -> larvaTailUV
 %    -> larvaTailAX
 %    -> larvaTailAY
+%  
+%    -> behaveModel - scalar
+%    -> behaveGain - scalar
+%    -> behaveAmp - scalar
+%    -> behaveThresh - scalar
+%    -> behaveLag - scalar
 %
 %    -> trunkParams - struct
-%    -> bladderParams - struct 
+%    -> ocellParams - struct 
 %    -> finParams- struct
 %    -> meatParams - struct
 %    -> kinParams - struct
@@ -44,9 +51,9 @@ function data = solver(p)
   % Setup initial conditions
   % -----------------------------------------------------    
   xyz_initial     = [0 0 0];      % initial position in inertial frame
-  U_initial       = [0 0 0];      % initial velocity in inertial frame
+  U_initial       = [0 5 0];      % initial velocity in inertial frame
   w_initial       = [0 0 0];      % initial body rotational velocity
-  Euler_initial   = [0 0 0];      % initial Euler angles  in xyz conv.
+  Euler_initial   = [0 pi/4 0];      % initial Euler angles  in xyz conv.
 
   state0    = [xyz_initial U_initial w_initial Euler_initial];
   timeSpan  = [p.timeStart p.timeStop];  
