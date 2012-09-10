@@ -1,0 +1,93 @@
+function data = solver(p)
+
+    % SETUP INITIAL CONDITIONS
+    U_initial       = [0.0001];      %initial velocity in inertial frame
+    x_initial       = [0];      %initial position in inertial frame
+
+
+    global IMethod;
+    IMethod         = 'linear';     % describes the interpolation method
+    
+    options   = odeset('InitialStep', .005,...
+                       'AbsTol',      1e-3,...
+                       'MaxStep',     .03,... 
+                       'Refine',       1,...
+                       'RelTol',       1e-3,...
+                       'OutputFcn',    @DisplayData,...
+                       'Vectorized',   'on');
+    state0              = [x_initial U_initial];
+    p.model.stopTime    = p.model.numBeats.*p.kine.H.cyclePeriod;
+    timeSpan            = [0 p.model.stopTime];
+    %timeSpan    = [p.time.start p.time.stop];
+    if p.model.save
+        global d;
+        d.drag      = [];
+        d.thrust    = [];
+        d.paddleF   = [];
+        d.accelRxn  = []; 
+        d.time      = [];
+        d.Cd        = [];
+        d.Re        = [];
+        d.dVolume   = [];
+        d.diameter  = [];
+        d.height    = [];
+        d.padPos    = [];
+    end    
+        
+    % RUN DYNAMICS
+     [time state] = ode113(@EquationsOfMotion,timeSpan,state0,options,p);
+     
+     data.time   = time';
+     data.x      = state(:,1)';
+     data.U      = state(:,2)';
+     if p.model.save
+         data.data  = d;
+     end
+
+%------------------------------------------------------------------------------------
+function f = EquationsOfMotion(t,state,p)
+%Describes the equations of motion for the body of a tadpole in inertial coordinates.
+%state= [x Ux];
+
+    % All function are set up to receive a column vector of states, and then return
+    % a matrix such that each row corresponds to a state variables, and each column
+    % corresponds to an input state set
+    
+    % All functions have dimensions as rows, columns as respective states
+
+    % Calculate Forces
+    F_resist        = CalcDrag(t,state,p);
+    Pforce          = 0;
+    switch p.model.version
+    case 'Jet'
+        F_propel    = CalcJetForce(t,state,p);
+    case 'Paddle'
+        F_propel    = CalcPaddleForce(t,state,p);
+    case 'Paddle+Jet'
+        Pforce      = CalcPaddleForce(t,state,p);
+        F_propel    = CalcJetForce(t,state,p) + CalcPaddleForce(t,state,p);
+    end
+    
+    % Sum up force:
+    F_Net       = F_propel + F_resist;
+    
+    if p.model.save
+        global tempp;
+        tempp.drag      = F_resist;
+        tempp.thrust    = F_propel;
+        tempp.paddleF   = Pforce;
+        tempp.accelRxn  = CalcAddedMass(t,state,p) .* F_Net(1,:)/(GetMass(p) + CalcAddedMass(t,state,p));
+        tempp.time      = t;
+        tempp.Cd        = CalcCd(t,state,p);
+        tempp.Re        = GetU(state) .*  CalcDiameter(t,state,p) .* GetDensity(p) ./ GetVisco(p);
+        tempp.dVolume   = CalcVolChange(t,state,p);
+        tempp.diameter  = CalcDiameter(t,state,p);
+        tempp.height    = CalcHeight(t,state,p);
+        tempp.padPos    = CalcPaddlePosition(t,state,p);
+    end
+    
+    % "f" gives the derivative of the respective state variable
+    U     =       GetU(state);   
+    f     =       zeros(2,size(state,2));
+    f(1,:)=       U(1,:);                    %first derivative of position in x    
+    f(2,:)=       F_Net(1,:)/(GetMass(p) + CalcAddedMass(t,state,p));     %acceleration in x
