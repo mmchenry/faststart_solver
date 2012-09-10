@@ -1,4 +1,4 @@
-function p = GetParams(action)
+function p = GetParams(action,ROOT)
 %  Constructs a parameters set for Botrylloides
   
   % Setup up simulation parameters
@@ -11,9 +11,9 @@ function p = GetParams(action)
   % Get kinematic and morphological parameters
   % -----------------------------------------------------
   switch action
-      case 'default'
+      case 'botry'
           [trunkParams,finParams,meatParams,ocellParams,kinParams]...
-            = GetLarva(simParams);
+            = GetBotry(simParams,ROOT);
   end
   
   % Setup time information
@@ -79,28 +79,30 @@ function p = GetParams(action)
   [p.larvaTrunkVol,p.larvaTrunkCV(1,1),p.larvaTrunkCV(2,1),...
       p.larvaTrunkCV(3,1)] = trunkVolume(trunkParams);
    
-  % Set dynamic parameters
-  % -----------------------------------------------------
-  for t=linspace(0,1/kinParams.beatFreq,simParams.sampleRate)
-     % Calculate tail position
-     tailrx = []; % FIXME
-     tailry = []; 
-     
-     % Calculate parameters
-     [Vol.net,Vol.x,Vol.y, Vol.z] = bodyVolume(trunkParams,...
-         ocellParams,finParams,meatParams,tailrx,tailry);
-  
-     [Mass.net, Mass.x, Mass.y, Mass.z] = bodyMass(trunkParams,...
-         ocellParams,finParams,meatParams,tailrx,tailry);  
-  
-     I = inertiaTensor(trunkParams,ocellParams,finParams,...
-         meatParams,tailrx,tailry, Mass);
-     
-     % Concatate to array
-     %FIXME
-  end
-  
-  clear tailrx tailry Vol Mass I;
+%   % Set dynamic parameters
+%   % -----------------------------------------------------
+%   for t=linspace(0,1/kinParams.beatFreq,simParams.sampleRate)
+%      % Calculate tail position
+%      
+%      % FIXME - Using temporary values for the moment
+%      tailrx = meatParams.s; 
+%      tailry = meatParams.s.*0; 
+%      
+%      % Calculate parameters
+%      [Vol.net,Vol.x,Vol.y, Vol.z] = bodyVolume(trunkParams,...
+%          ocellParams,finParams,meatParams,tailrx,tailry);
+%   
+%      [Mass.net, Mass.x, Mass.y, Mass.z] = bodyMass(trunkParams,...
+%          ocellParams,finParams,meatParams,tailrx,tailry);  
+%   
+%      I = inertiaTensor(trunkParams,ocellParams,finParams,...
+%          meatParams,tailrx,tailry, Mass);
+%      
+%      % Concatate to array
+%      %FIXME
+%   end
+%   
+%   clear tailrx tailry Vol Mass I;
 
   
   % Copy parameters

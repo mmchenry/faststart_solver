@@ -1,4 +1,4 @@
-function [trunkParams,finParams,meatParams,ocellParams,kinParams] = getBotry(simParams)
+function [trunkParams,finParams,meatParams,ocellParams,kinParams] = getBotry(simParams,ROOT)
 % This function returns all of the parameters that describe the 
 % morphology and kinematics of Botrylloides spp.
 %
@@ -52,7 +52,6 @@ function [trunkParams,finParams,meatParams,ocellParams,kinParams] = getBotry(sim
   
   % Set file locations
   % -----------------------------------------------------    
-  ROOT = '/Users/mmchenry/Dropbox/Projects/Phototaxis model/solver';
   trunk_morpho_file =   [ROOT filesep '0params' filesep '0botry' filesep 'trunk_morpho.mat'];
   ocell_morpho_file =   [ROOT filesep '0params' filesep '0botry' filesep 'ocell_morpho.mat'];
   fin_morpho_file =     [ROOT filesep '0params' filesep '0botry' filesep 'fin_morpho.mat'];
