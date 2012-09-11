@@ -32,7 +32,6 @@ function data = solver(p)
 %    -> behaveThresh - scalar
 %    -> behaveLag - scalar
 %
-%    -> trunkParams - struct
 %    -> ocellParams - struct
 %    -> finParams- struct
 %    -> meatParams - struct
@@ -98,7 +97,8 @@ if (t > 80)
     disp('');
 end
 
-% Set state
+%% Set state
+
 state.t = t;
 state.r = stateMat(1:3);
 state.u = stateMat(4:6);
@@ -107,7 +107,9 @@ state.xi = stateMat(10);
 state.theta = stateMat(11);
 state.phi = stateMat(12);
 
-% Set light intensity
+
+%% Set light intensity
+
 state.light(1,1) = interp1(p.lightT,p.light(1,:),t);
 state.light(2,1) = interp1(p.lightT,p.light(2,:),t);
 state.light(3,1) = interp1(p.lightT,p.light(3,:),t);
@@ -119,7 +121,9 @@ state.dlight(3,1) = interp1(p.lightT,p.dlight(3,:),t);
 state.light  = InertialToBody(state.light,state.xi,state.theta,state.phi);
 state.dlight = InertialToBody(state.dlight,state.xi,state.theta,state.phi);
 
-% Set percieved intensity
+
+%% Set percieved intensity
+
 global gBright gBrightT
 if (isempty(gBrightT) ||...
         min(gBrightT) > t-p.behaveLag ||...
@@ -131,7 +135,11 @@ else
     state.dbright = interp1(gBrightT,[0 diff(gBright)],t-p.behaveLag);
 end
 
-% Set tail angle
+
+%% Set tail angle
+
+%TODO: Ditch tail angle and implement behavioral algorithm differently
+
 switch p.behaveModel
     case 1
         state.tailAngle = p.behaveGain*state.bright+p.behaveOffset;
@@ -155,7 +163,9 @@ switch p.behaveModel
         end
 end
 
-% Set tail points
+
+%% Set tail position
+
 nT = state.t - floor(state.t*p.kinParams.beatFreq)/p.kinParams.beatFreq;
 TR(1,:) = interp2(p.larvaTailS,p.larvaTailT,...
                   p.larvaTailRX,p.larvaTailS(1,:),nT);
@@ -169,14 +179,14 @@ TR = rot*TR;
 state.tailrx = TR(1,:);
 state.tailry = TR(2,:);
 
-
 % plot(TR(1,:),TR(2,:))
 % axis equal
 % pause(.01)
 
 clear TR rot nT
 
-% Set tail velocity
+%% Set tail velocity
+
 nT = state.t - floor(state.t*p.kinParams.beatFreq)/p.kinParams.beatFreq;
 state.tailux = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailUX,p.larvaTailS(1,:),nT);
@@ -184,8 +194,8 @@ state.tailuy = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailUY,p.larvaTailS(1,:),nT);
 clear nT
 
-% Set tail acceleration
-% -----------------------------------------------------
+%% Set tail acceleration
+
 nT = state.t - floor(state.t*p.kinParams.beatFreq)/p.kinParams.beatFreq;
 state.tailax  = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailAX,p.larvaTailS(1,:),nT);
@@ -193,16 +203,16 @@ state.tailay  = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailAY,p.larvaTailS(1,:),nT);
 clear nT
 
-% Calculate new center of mass/volume
-% -----------------------------------------------------
-[Mass.net, Mass.x, Mass.y, Mass.z] = bodyMass(p.trunkParams,...
-    p.ocellParams,p.finParams,p.meatParams,state.tailrx,state.tailry);
+%% Calculate new center of mass/volume
 
-[Vol.net, Vol.x, Vol.y, Vol.z] = bodyVolume(p.trunkParams,...
-    p.ocellParams,p.finParams,p.meatParams,state.tailrx,state.tailry);
+[Mass.net, Mass.x, Mass.y, Mass.z] = bodyMass(...
+        p.ocellParams,p.finParams,p.meatParams,state.tailrx,state.tailry);
 
-I = inertiaTensor(p.trunkParams,p.ocellParams,p.finParams,...
-    p.meatParams,state.tailrx,state.tailry, Mass);
+[Vol.net, Vol.x, Vol.y, Vol.z] = bodyVolume(...
+        p.ocellParams,p.finParams,p.meatParams,state.tailrx,state.tailry);
+
+I = inertiaTensor(p.ocellParams,p.finParams,...
+                  p.meatParams,state.tailrx,state.tailry, Mass);
 
 state.I  = I;
 state.vol = Vol.net;
@@ -212,34 +222,38 @@ state.CM = [Mass.x;Mass.y;Mass.z];
 
 clear Mass Vol I
 
-% Calculate Components of Force (body frame)
-% -----------------------------------------------------
+
+%% Calculate Components of Force (body frame)
+
 [F_Tail,M_Tail]    = CalcTailForce(p,state);
-[F_Trunk,M_Trunk]  = CalcTrunkForce(p,state);
 [F_Buoy,M_Buoy]    = CalcBouyForce(p,state);
 [F_Grav,M_Grav]    = CalcGravForce(p,state);
 
-F_Net = F_Tail + F_Trunk + F_Buoy + F_Grav;
-M_Net = M_Tail + M_Trunk + M_Buoy + M_Grav;
+F_Net = F_Tail + F_Buoy + F_Grav;
+M_Net = M_Tail + M_Buoy + M_Grav;
 
-% Convert to inertial frame of reference
-% -----------------------------------------------------
+
+%% Convert to inertial frame of reference
+
 F_Net = BodyToInertial(F_Net,state.xi,state.theta,state.phi);
 M_Net = BodyToInertial(M_Net,state.xi,state.theta,state.phi);
 
-% Calculate Rotation Acceleration
-% -----------------------------------------------------
+
+%% Calculate Rotation Acceleration
+
 dwdt = [inv(state.I)*(M_Net-cross(state.w,state.I*state.w))];
 
-% Calculate Change in Euler Angles
-% -----------------------------------------------------
+
+%% Calculate Change in Euler Angles
+
 dxidt     = state.w(1)+state.w(3)*cos(state.xi)*tan(state.theta)+...
-    state.w(2)*sin(state.xi)*tan(state.theta);
+            state.w(2)*sin(state.xi)*tan(state.theta);
 dthetadt  = state.w(2)*cos(state.xi)-state.w(3)*sin(state.xi);
 dphidt    = sec(state.theta)*(state.w(3)*cos(state.xi)+state.w(2)*sin(state.xi));
 
-% "f" gives the derivative of the respective state variable
-% -----------------------------------------------------
+
+%% "f" gives the derivative of the respective state variable
+
 f      =  zeros(12,1);
 
 f(1)   =  state.u(1);              % first derivative of position in x
@@ -259,8 +273,10 @@ f(11)  =  dthetadt;
 f(12)  =  dphidt;
 
 
-% Display function
-% -----------------------------------------------------
+
+
+%% Display function
+
 function status = DisplayData(t,y,flag,p)
 if strcmp(flag,'done')
     status = odeplot([],[],flag);
@@ -269,10 +285,9 @@ else
 end
 
 % Skip initializing call
-if (isempty(t) | t(1) < eps) return; end;
+if (isempty(t) || t(1) < eps) return; end;
 
 % Set light intensity
-% -----------------------------------------------------
 global gBright gBrightT
 for i=1:length(t)
     light(1,1) = interp1(p.lightT,p.light(1,:),t(i));
@@ -284,3 +299,6 @@ for i=1:length(t)
     gBright = [gBright bright];
     gBrightT = [gBrightT t(i)];
 end
+
+%TODO: Figure out a better place for this
+

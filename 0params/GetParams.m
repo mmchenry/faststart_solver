@@ -1,28 +1,31 @@
 function p = GetParams(action,ROOT)
 %  Constructs a parameters set for Botrylloides
   
-  % Setup up simulation parameters
-  % -----------------------------------------------------
+  %% Setup up simulation parameters
+ 
   simParams.numTailSegs =      200; 
   simParams.numTrunkSegs =     50;
   simParams.numTailBeats =     5; %500;
   simParams.sampleRate =       100; %(1/tailBeat)
   
-  % Get kinematic and morphological parameters
-  % -----------------------------------------------------
+  
+  %% Get kinematic and morphological parameters
+  
   switch action
       case 'botry'
-          [trunkParams,finParams,meatParams,ocellParams,kinParams]...
+          [finParams,meatParams,ocellParams,kinParams]...
             = GetBotry(simParams,ROOT);
   end
   
-  % Setup time information
-  % -----------------------------------------------------
+  
+  %% Setup time information
+
   p.timeStart = 0;
   p.timeStop = simParams.numTailBeats/kinParams.beatFreq;
   
-  % Setup light
-  % -----------------------------------------------------
+  
+  %% Setup light
+
   p.lightT = linspace(p.timeStart,p.timeStop,...
       simParams.numTailBeats*simParams.sampleRate);
   p.light = [zeros(1,length(p.lightT)); 
@@ -30,17 +33,19 @@ function p = GetParams(action,ROOT)
          
   p.dlight = [zeros(3,1) diff(p.light,1,2)];
   
-  % Setup gravity
-  % ----------------------------------------------------- 
+  
+  %% Setup gravity
+  
   p.gravity = [0; 0; -9.81];
   
-  % Setup fluid constants
-  % -----------------------------------------------------
+  %% Setup fluid constants
+  
   p.fluidDensity = 1.02e-2;    % qg/qm^3
   p.fluidkVisc = 1.047e0;       % qm^2/cs
 
-  % Calculate tail information
-  % -----------------------------------------------------
+  %% Calculate tail information
+  
+  %TODO: Perform these calculations only during solver (?)
   
   % get kinematics
   [p.larvaTailT,p.larvaTailS,p.larvaTailRX,p.larvaTailRY] = ...
@@ -73,41 +78,11 @@ function p = GetParams(action,ROOT)
   p.larvaTailAY = fnval(spAy,{t, s});
 
   clear s t rx ry spRx spRy spVx spVy spAx spAy;
-  
-  % Set static parameters
-  % -----------------------------------------------------
-  [p.larvaTrunkVol,p.larvaTrunkCV(1,1),p.larvaTrunkCV(2,1),...
-      p.larvaTrunkCV(3,1)] = trunkVolume(trunkParams);
-   
-%   % Set dynamic parameters
-%   % -----------------------------------------------------
-%   for t=linspace(0,1/kinParams.beatFreq,simParams.sampleRate)
-%      % Calculate tail position
-%      
-%      % FIXME - Using temporary values for the moment
-%      tailrx = meatParams.s; 
-%      tailry = meatParams.s.*0; 
-%      
-%      % Calculate parameters
-%      [Vol.net,Vol.x,Vol.y, Vol.z] = bodyVolume(trunkParams,...
-%          ocellParams,finParams,meatParams,tailrx,tailry);
-%   
-%      [Mass.net, Mass.x, Mass.y, Mass.z] = bodyMass(trunkParams,...
-%          ocellParams,finParams,meatParams,tailrx,tailry);  
-%   
-%      I = inertiaTensor(trunkParams,ocellParams,finParams,...
-%          meatParams,tailrx,tailry, Mass);
-%      
-%      % Concatate to array
-%      %FIXME
-%   end
-%   
-%   clear tailrx tailry Vol Mass I;
+%  
 
   
-  % Copy parameters
-  % ----------------------------------------------------- 
-  p.trunkParams = trunkParams;
+  %% Copy parameters
+  
   p.ocellParams = ocellParams;
   p.finParams = finParams;
   p.meatParams = meatParams;

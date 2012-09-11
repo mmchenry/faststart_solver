@@ -1,15 +1,8 @@
-function [M,x,y,z] = bodyMass(trunkParams,ocellParams,finParams,meatParams,tailX,tailY)
+function [M,x,y,z] = bodyMass(ocellParams,finParams,meatParams,tailX,tailY)
 % This function calculates the center of mass,
 % for the given morphological parameters
 %
 % Input data structure
-%  trunkParams
-%    -> s - row vector
-%    -> right - row vector
-%    -> left - row vector
-%    -> dorsal - row vector
-%    -> ventral - row vector
-%    -> density - scalar
 %
 %  ocellParams
 %    -> antPost - scalar
@@ -32,92 +25,78 @@ function [M,x,y,z] = bodyMass(trunkParams,ocellParams,finParams,meatParams,tailX
 %
 %  tailX, tailY - row vector (same length as meatParams.s &
 %     finParams.s), all start from x = -inf
-  
+
 %
 % Output data structure
 %  M - mass of the body
 %  x,y,z - position of the center of mass
 
-  
-  % Check assumptions
-  % -----------------------------------------------------
-  if (max(abs(trunkParams.right-trunkParams.left)) > 100*eps)
-    error('trunk left and right must be equal')
-  end
 
-  % Calculation of total mass
-  % -----------------------------------------------------
-  dorsalFinMass = finParams.density*trapz(finParams.s,...
-      finParams.width.*(finParams.height-meatParams.radius));
+%TODO: change circular ocellus into an elliptical swim bladder
 
-  ventralFinMass = finParams.density*trapz(finParams.s,...
-      finParams.width.*(finParams.depth-meatParams.radius));
 
-  tailMeatMass = meatParams.density*trapz(meatParams.s,...
-      pi*meatParams.radius.^2);
+%% Calculation of total mass
 
-  trunkMass = trunkParams.density*trapz(trunkParams.s,...
-      0.5*pi*trunkParams.right.*(trunkParams.dorsal+trunkParams.ventral))...
-      -trunkParams.density*(4*pi/3)*ocellParams.radius^3;
+dorsalFinMass = finParams.density*trapz(finParams.s,...
+    finParams.width.*(finParams.height-meatParams.radius));
 
-  ocellusMass = ocellParams.density*(4*pi/3)*ocellParams.radius^3;
+ventralFinMass = finParams.density*trapz(finParams.s,...
+    finParams.width.*(finParams.depth-meatParams.radius));
 
-  M = dorsalFinMass + ventralFinMass + tailMeatMass + trunkMass + ocellusMass;
+tailMeatMass = meatParams.density*trapz(meatParams.s,...
+    pi*meatParams.radius.^2);
 
-  % Calculation of the x position of the center of mass
-  % -----------------------------------------------------  
-  dorsalFinX = finParams.density*trapz(finParams.s,...
-      finParams.width.*(finParams.height-meatParams.radius).*tailX);
+ocellusMass = ocellParams.density*(4*pi/3)*ocellParams.radius^3;
 
-  ventralFinX = finParams.density*trapz(finParams.s,...
-      finParams.width.*(finParams.depth-meatParams.radius).*tailX);
+M = dorsalFinMass + ventralFinMass + tailMeatMass + ocellusMass;
 
-  tailMeatX = meatParams.density*trapz(meatParams.s,...
-      pi*meatParams.radius.^2.*tailX);
 
-  trunkX = trunkParams.density*trapz(trunkParams.s,...
-      0.5*pi*trunkParams.right.*(trunkParams.dorsal+trunkParams.ventral).*trunkParams.s)...
-      -trunkParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.antPost;
+%% Calculation of the x position of the center of mass
 
-  ocellusX = ocellParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.antPost;
+dorsalFinX = finParams.density*trapz(finParams.s,...
+    finParams.width.*(finParams.height-meatParams.radius).*tailX);
 
-  x = (dorsalFinX + ventralFinX + tailMeatX + trunkX + ocellusX)/M;
+ventralFinX = finParams.density*trapz(finParams.s,...
+    finParams.width.*(finParams.depth-meatParams.radius).*tailX);
 
-  % Calculation of the y position of the center of mass
-  % -----------------------------------------------------
-  dorsalFinY = finParams.density*trapz(finParams.s,...
-      [finParams.width.*(finParams.height-meatParams.radius).*tailY]);
-  
-  ventralFinY= finParams.density*trapz(finParams.s,...
-      [finParams.width.*(finParams.depth-meatParams.radius).*tailY]);
+tailMeatX = meatParams.density*trapz(meatParams.s,...
+    pi*meatParams.radius.^2.*tailX);
 
-  tailMeatY = meatParams.density*trapz(meatParams.s,...
-      pi*meatParams.radius.^2.*tailY);
+ocellusX = ocellParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.antPost;
 
-  % By assumption of frontal symmetry
-  trunkY = -trunkParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.leftRight;
+x = (dorsalFinX + ventralFinX + tailMeatX + ocellusX)/M;
 
-  ocellusY = ocellParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.leftRight;
 
-  y = (dorsalFinY + ventralFinY + tailMeatY + trunkY + ocellusY)/M;
+%% Calculation of the y position of the center of mass
 
-  % Calculation of the z position of the center of mass
-  % -----------------------------------------------------
-  dorsalFinZ = finParams.density*trapz(finParams.s,...
-      finParams.width.*(finParams.height-meatParams.radius).*...
-      ((finParams.height-meatParams.radius)/2+meatParams.radius));
-  
-  ventralFinZ = -finParams.density*trapz(finParams.s,...
-      finParams.width.*(finParams.depth-meatParams.radius).*...
-      0.5.*(finParams.depth+meatParams.radius));
+dorsalFinY = finParams.density*trapz(finParams.s,...
+    [finParams.width.*(finParams.height-meatParams.radius).*tailY]);
 
-  tailMeatZ = 0;      % By assumption of circular cross-section
+ventralFinY= finParams.density*trapz(finParams.s,...
+    [finParams.width.*(finParams.depth-meatParams.radius).*tailY]);
 
-  trunkZ = trunkParams.density*trapz(trunkParams.s,...
-      pi*trunkParams.right.*0.5.*(trunkParams.dorsal+trunkParams.ventral).*...
-      0.5.*(trunkParams.dorsal-trunkParams.ventral)) ...
-      -trunkParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.dorsoVent;
+tailMeatY = meatParams.density*trapz(meatParams.s,...
+    pi*meatParams.radius.^2.*tailY);
 
-  ocellusZ = ocellParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.dorsoVent;
+% By assumption of frontal symmetry
 
-  z = (dorsalFinZ + ventralFinZ + tailMeatZ + trunkZ + ocellusZ)/M;
+ocellusY = ocellParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.leftRight;
+
+y = (dorsalFinY + ventralFinY + tailMeatY + ocellusY)/M;
+
+
+%% Calculation of the z position of the center of mass
+
+dorsalFinZ = finParams.density*trapz(finParams.s,...
+    finParams.width.*(finParams.height-meatParams.radius).*...
+    ((finParams.height-meatParams.radius)/2+meatParams.radius));
+
+ventralFinZ = -finParams.density*trapz(finParams.s,...
+    finParams.width.*(finParams.depth-meatParams.radius).*...
+    0.5.*(finParams.depth+meatParams.radius));
+
+tailMeatZ = 0;      % By assumption of circular cross-section
+
+ocellusZ = ocellParams.density*(4*pi/3)*ocellParams.radius^3*ocellParams.dorsoVent;
+
+z = (dorsalFinZ + ventralFinZ + tailMeatZ + ocellusZ)/M;
