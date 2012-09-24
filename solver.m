@@ -58,7 +58,6 @@ state0    = [xyz_initial U_initial w_initial Euler_initial];
 timeSpan  = [p.timeStart p.timeStop];
 
 % Setup ode options
-% -----------------------------------------------------
 
 options   = odeset('InitialStep', .005,...
     'RelTol',       1e-2,...
@@ -166,7 +165,8 @@ end
 
 %% Set tail position
 
-nT = state.t - floor(state.t*p.kinParams.beatFreq)/p.kinParams.beatFreq;
+nT = state.t - floor(state.t/p.kinParams.und.beatPeriod)*...
+                     p.kinParams.und.beatPeriod;
 TR(1,:) = interp2(p.larvaTailS,p.larvaTailT,...
                   p.larvaTailRX,p.larvaTailS(1,:),nT);
 TR(2,:) = interp2(p.larvaTailS,p.larvaTailT,...
@@ -185,23 +185,28 @@ state.tailry = TR(2,:);
 
 clear TR rot nT
 
+
 %% Set tail velocity
 
-nT = state.t - floor(state.t*p.kinParams.beatFreq)/p.kinParams.beatFreq;
+nT = state.t - floor(state.t/p.kinParams.und.beatPeriod)*...
+                     p.kinParams.und.beatPeriod;
 state.tailux = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailUX,p.larvaTailS(1,:),nT);
 state.tailuy = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailUY,p.larvaTailS(1,:),nT);
 clear nT
 
+
 %% Set tail acceleration
 
-nT = state.t - floor(state.t*p.kinParams.beatFreq)/p.kinParams.beatFreq;
+nT = state.t - floor(state.t/p.kinParams.und.beatPeriod)*...
+                     p.kinParams.und.beatPeriod;
 state.tailax  = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailAX,p.larvaTailS(1,:),nT);
 state.tailay  = interp2(p.larvaTailS,p.larvaTailT,...
     p.larvaTailAY,p.larvaTailS(1,:),nT);
 clear nT
+
 
 %% Calculate new center of mass/volume
 

@@ -2,8 +2,12 @@ function runSims()
 % Function collects parameters from file
 % and then runs through a parameter space
 
-% Set root
-ROOT = '/Volumes/Docs/Dropbox/matlab/faststart_model/faststart_solver';
+% Set root (use 'dir' to identify which computer you're using)
+if ~isempty(dir('/Volumes/Docs'))
+    ROOT = ['/Volumes/Docs/Dropbox/matlab/faststart_model/faststart_solver'];
+else
+    ROOT = ['~/Dropbox/matlab/faststart_model/faststart_solver'];
+end
 
 % Set output
 outfn = [ROOT filesep 'data.mat'];
@@ -15,7 +19,7 @@ addpath([ROOT filesep '0params']);
 addpath([ROOT filesep '0trans']);
 
 % Prepare standard
-p = GetParams('botry',ROOT);
+p = GetParams('danio',ROOT);
 %p = GetParams('default');
 
 % Add behavioral parameters

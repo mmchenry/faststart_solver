@@ -38,21 +38,33 @@ function [finParams,meatParams,ocellParams,kinParams] = GetBotry(simParams,ROOT)
 %    -> radius - row vector
 %    -> density - scalar
 %
-%  kinParams
+%  kinParams.stg1
+%    -> dur - scalar
+%    -> kMax - scalar
+%
+%  kinParams.stg2
 %    -> kLeft - scalar
 %    -> kRight - scalar
 %    -> mLeft - scalar
 %    -> mRight - scalar
 %    -> waveSpeed - scalar
-%    -> beatFreq - scalar
+%    -> beatPeriod - scalar
+%
+%  kinParams.und
+%    -> kLeft - scalar
+%    -> kRight - scalar
+%    -> mLeft - scalar
+%    -> mRight - scalar
+%    -> waveSpeed - scalar
+%    -> beatPeriod - scalar
 %
 % Units: 10^-4 m, 10^-2 s, 10^-4 g
 
 %% Set file locations
-ocell_morpho_file =   [ROOT filesep '0params' filesep '0botry' filesep 'ocell_morpho.mat'];
-fin_morpho_file =     [ROOT filesep '0params' filesep '0botry' filesep 'fin_morpho.mat'];
-meat_morpho_file =    [ROOT filesep '0params' filesep '0botry' filesep 'meat_morpho.mat'];
-kine_morpho_file =    [ROOT filesep '0params' filesep '0botry' filesep 'kine_morpho.mat'];
+ocell_morpho_file =   [ROOT filesep '0params' filesep '0danio' filesep 'ocell_morpho.mat'];
+fin_morpho_file =     [ROOT filesep '0params' filesep '0danio' filesep 'fin_morpho.mat'];
+meat_morpho_file =    [ROOT filesep '0params' filesep '0danio' filesep 'meat_morpho.mat'];
+kine_morpho_file =    [ROOT filesep '0params' filesep '0danio' filesep 'kine_morpho.mat'];
 
 
 %% Put together ocellus data
@@ -66,6 +78,7 @@ ocellParams.radius = ocellData.radius;
 ocellParams.density = ocellData.density;
 
 clear ocellData;
+
 
 %% Put together tail fin data
 
@@ -93,19 +106,41 @@ clear meatData;
 
 load (kine_morpho_file);
 
-% Parameters for stage 1 of fast start
+% Body position where bending begins
+kinParams.s_startBend = kineData.s_startBend;
 
 
+% Parameters for stage 1 of fast start -------------------------------
 
-% Parameters for stage 2 of fast start
+% Stage 1 duration
+kinParams.stg1.dur = kineData.stg1.dur;
+
+% Max curvature
+kinParams.stg1.kMax = kineData.stg1.kMax;
+
+% Wave speed
+kinParams.stg1.waveSpeed = kineData.stg1.waveSpeed;
 
 
-% Parameters for undulatory swimming
-kinParams.kLeft = kineData.kLeft;
-kinParams.kRight = kineData.kRight;
-kinParams.mLeft = kineData.mLeft;
-kinParams.mRight = kineData.mRight;
-kinParams.waveSpeed = kineData.waveSpeed;
-kinParams.beatFreq = kineData.beatFreq;
+% Parameters for stage 2 of fast start -------------------------------
+
+% Max curvature on left and right sides
+kinParams.stg2.kLeft     = kineData.stg2.kLeft;
+kinParams.stg2.kRight    = kineData.stg2.kRight;
+
+% Wave speed & beat period
+kinParams.stg2.waveSpeed = kineData.stg2.waveSpeed;
+kinParams.stg2.beatPeriod  = kineData.stg2.beatPeriod;
+
+
+% Parameters for undulatory swimming ---------------------------------
+
+% Max curvature on left and right sides
+kinParams.und.kLeft     = kineData.und.kLeft;
+kinParams.und.kRight    = kineData.und.kRight;
+
+% Wave speed & beat period
+kinParams.und.waveSpeed = kineData.und.waveSpeed;
+kinParams.und.beatPeriod  = kineData.und.beatPeriod;
 
 clear kineData;

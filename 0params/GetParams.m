@@ -5,23 +5,31 @@ function p = GetParams(action,ROOT)
  
   simParams.numTailSegs =      200; 
   simParams.numTrunkSegs =     50;
-  simParams.numTailBeats =     5; %500;
+  simParams.numTailBeats =     2; %500;
   simParams.sampleRate =       100; %(1/tailBeat)
   
   
   %% Get kinematic and morphological parameters
   
   switch action
+      % Parameters for ascidian larvae
       case 'botry'
           [finParams,meatParams,ocellParams,kinParams]...
             = GetBotry(simParams,ROOT);
+        
+       % Parameters for zebrafish larvae
+       case 'danio'
+          [finParams,meatParams,ocellParams,kinParams]...
+            = GetDanio(simParams,ROOT);
   end
   
   
   %% Setup time information
 
   p.timeStart = 0;
-  p.timeStop = simParams.numTailBeats/kinParams.beatFreq;
+  p.timeStop = kinParams.stg1.dur + max(finParams.s)/kinParams.stg1.waveSpeed ...
+               + kinParams.stg2.beatPeriod + ...
+               simParams.numTailBeats*kinParams.und.beatPeriod;
   
   
   %% Setup light
@@ -38,18 +46,18 @@ function p = GetParams(action,ROOT)
   
   p.gravity = [0; 0; -9.81];
   
+  
   %% Setup fluid constants
   
   p.fluidDensity = 1.02e-2;    % qg/qm^3
   p.fluidkVisc = 1.047e0;       % qm^2/cs
+  
 
   %% Calculate tail information
-  
-  %TODO: Perform these calculations only during solver (?)
-  
+    
   % get kinematics
   [p.larvaTailT,p.larvaTailS,p.larvaTailRX,p.larvaTailRY] = ...
-      GetKinematics(kinParams,simParams,max(finParams.s));
+      GetKinematics(kinParams,simParams,max(finParams.s),p.timeStop);
   
   % make periodic version
   s = linspace(min(p.larvaTailS), max(p.larvaTailS), length(p.larvaTailS));
