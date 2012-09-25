@@ -109,38 +109,37 @@ load (kine_morpho_file);
 % Body position where bending begins
 kinParams.s_startBend = kineData.s_startBend;
 
-
 % Parameters for stage 1 of fast start -------------------------------
 
 % Stage 1 duration
 kinParams.stg1.dur = kineData.stg1.dur;
 
-% Max curvature
-kinParams.stg1.kMax = kineData.stg1.kMax;
-
 % Wave speed
 kinParams.stg1.waveSpeed = kineData.stg1.waveSpeed;
 
+% Max curvature
+kinParams.stg1.kMax = kineData.stg1.kMax;
+
 
 % Parameters for stage 2 of fast start -------------------------------
+
+% Wave speed & duration (half beat)
+kinParams.stg2.dur       = kineData.stg2.beatPeriod;
+kinParams.stg2.waveSpeed = kineData.stg2.waveSpeed;
 
 % Max curvature on left and right sides
 kinParams.stg2.kLeft     = kineData.stg2.kLeft;
 kinParams.stg2.kRight    = kineData.stg2.kRight;
 
-% Wave speed & beat period
-kinParams.stg2.waveSpeed = kineData.stg2.waveSpeed;
-kinParams.stg2.beatPeriod  = kineData.stg2.beatPeriod;
-
 
 % Parameters for undulatory swimming ---------------------------------
+
+% Wave speed & beat period (full beat cycle)
+kinParams.und.beatPeriod = kineData.und.beatPeriod;
+kinParams.und.waveSpeed  = kineData.und.waveSpeed;
 
 % Max curvature on left and right sides
 kinParams.und.kLeft     = kineData.und.kLeft;
 kinParams.und.kRight    = kineData.und.kRight;
-
-% Wave speed & beat period
-kinParams.und.waveSpeed = kineData.und.waveSpeed;
-kinParams.und.beatPeriod  = kineData.und.beatPeriod;
 
 clear kineData;

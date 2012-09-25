@@ -25,11 +25,16 @@ function p = GetParams(action,ROOT)
   
   
   %% Setup time information
-
+    
+  % Length of flexible region on body
+  flex_len = max(finParams.s) - kinParams.s_startBend;
+  
   p.timeStart = 0;
-  p.timeStop = kinParams.stg1.dur + max(finParams.s)/kinParams.stg1.waveSpeed ...
-               + kinParams.stg2.beatPeriod + ...
-               simParams.numTailBeats*kinParams.und.beatPeriod;
+  p.timeStop = kinParams.stg1.dur + flex_len/kinParams.stg1.waveSpeed ...
+               + kinParams.stg2.dur + flex_len/kinParams.stg2.waveSpeed ...
+               + simParams.numTailBeats*kinParams.und.beatPeriod;
+           
+  clear flex_len
   
   
   %% Setup light

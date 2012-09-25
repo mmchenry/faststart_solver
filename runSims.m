@@ -36,6 +36,7 @@ gBright = [];
 gBrightT = [];
 
 % Solve
+figure;
 data = solver(p);
 data.p = p;
 

@@ -34,52 +34,49 @@ upsamp = 10;
 % Positon where body starts to bend            
 s_start  = kinParams.s_startBend;
 
-
-% TODO: Add rigid trunk region
-% TODO: Adjust time to correct values 
-% TODO: delete unused kinematic parameters & correct time values
-% TODO: make change in period from stage 2 to 3 more realistic 
-% (check Muller)
+%Indicies for bending region of body
+i_start = find(s(1,:)>s_start);
 
 
 %% Stage 1    
-% The body curls into a "C" toward the left
+% The body curls into a "C" toward the left with a rapid wavespeed
      
 % Parameters
-wv_spd   = kinParams.stg1.waveSpeed;
-b_period = kinParams.stg1.dur;
-kLeft  = -kinParams.stg1.kMax;
-kRight = 0;
-stg1_end = (b_period + s(end)/wv_spd);
+wv_spd     = kinParams.stg1.waveSpeed;
+b_period   = kinParams.stg1.dur;
+kLeft      = -kinParams.stg1.kMax;
+kRight     = 0;
 
 % Index of time for duration of stage 1
-t_start = t(1);
-t_end   = t(find(...
-            t(:,1)<=stg1_end,...
-                     1,'last'),1);
-t_idx   = (t>=t_start) & (t<=t_end);
+t_start1 = (s-s_start)/wv_spd;
+t_end1   = t_start1 + b_period;
+t_idx1   = t<t_end1;
+
+%t_start = t(1);
+%t_end   = t(find(t(:,1)<=stg1_end,1,'last'),1);
 
 % Wave position
-phi1 = t_idx .* (wv_spd*t-(s-0*s_start))/(wv_spd*b_period);
+phi1 = (wv_spd*t-(s-s_start))/(wv_spd*b_period);
 
 % Curvature
 K1 = -((kLeft-kRight).*(0.5.*cos(pi.*phi1./b_period)) - ((kLeft+kRight)./2));
 
 % Define position-specifc start and end of bending wave
-wv_start = s/wv_spd;
-wv_end = b_period+s/wv_spd;
+%wv_start = (s-s_start)/wv_spd;
+%wv_end = b_period+(s-s_start)/wv_spd;
 
-% Set curvature constant outside of wave propagation
-K1(t>wv_end)   = kLeft;
-K1(t<wv_start) = kRight;
+% Set to kRight for before wave propagation
+%K1(t>b_period)   = kLeft;
+K1(t<t_start1) = kRight;
+
+% Make trunk/cranium rigid
+K1(s<s_start) = 0;
 
 % Zero out values outside of stage 1
-K1 = t_idx .* K1;
+K1 = t_idx1 .* K1;
 
-% Set values before delay to stage 1 curvature
-%kLast = repmat(K1(find(t_idx(:,1)==1,1,'last'),:),size(t,1),1);
-
-clear wv_spd b_period kLeft kRight
+% Clear out temporary variables
+clear wv_spd b_period kLeft kRight wv_start wv_end t_idx1 t_start1
 
 
 %% Stage 2 
@@ -88,47 +85,37 @@ clear wv_spd b_period kLeft kRight
 
 % Parameters
 wv_spd      = kinParams.stg2.waveSpeed;
-b_period    = kinParams.stg2.beatPeriod;
+b_period    = kinParams.stg2.dur;
 kLeft       = -kinParams.stg1.kMax;
 kRight      = kinParams.stg2.kRight;
+%stg2_end    = stg1_end + b_period;
 
-stg2_end    = stg1_end + b_period;
+% Define delay for the start of bending (varies with s)
+delay2 = (s-s_start)/wv_spd;
 
 % Index of time for duration of stage 2
-t_start = t(find(...
-            t(:,1)>stg1_end,...
-                     1,'first'),1);
-t_end   = t(find(...
-            t(:,1)<=stg2_end,...
-                     1,'last'),1);
-t_idx   = (t>=t_start) & (t<=t_end);
-
-
-%b_period = repmat(linspace(b_pd_min,b_pd_max,size(t,2)),size(t,1),1);
+t_start2 = min(t_end1(:,min(i_start))) + delay2;
+t_end2   = t_start2 + b_period + delay2;
+t_idx2   = (t>=t_end1) & (t<t_end2);
 
 % Calculate wave position
-phi2 = (wv_spd*(t-t_start)-(s-0*s_start))./(wv_spd*b_period);
+phi2 = (wv_spd*(t-t_start2)-(s-s_start))./(wv_spd*b_period);
 
 % Calculate curvature
 K2 = ((kLeft-kRight).*(0.5.*cos(pi.*phi2)) + ((kLeft+kRight)./2));
 
-% Define delay for the start of bending (varies with s)
-delay2 = s/wv_spd;
-
 % Set values before delay to stage 1 curvature
-%kLast = repmat(K1(end,:),size(t,1),1);
-K2((t-t_start)<delay2) = kLeft;
+K2((t-t_start2)<delay2) = kLeft;
 
-%K2((t-t_start)<delay) = kLast((t-t_start)<delay);
+% Make trunk/cranium rigid
+K2(s<s_start) = 0;
 
 % Zero out values outside of stage 2
-K2 = t_idx .* K2;
+K2 = t_idx2 .* K2;
 
-% Calculate position at end of this phase
-i_last = find(t_idx(:,1)==1,1,'last');
-end_phs = (max(delay2(:))-delay2)./b_period;
-
-clear wv_spd b_period kLeft kRight t_idx t_start t_end
+% Clear out temporary variables
+clear wv_spd b_period kLeft kRight t_idx2 t_start2 delay2 t_start2
+clear t_idx2
 
 
 %% Stage 3 
@@ -136,36 +123,44 @@ clear wv_spd b_period kLeft kRight t_idx t_start t_end
 
 % Define short names
 wv_spd      = kinParams.stg2.waveSpeed;
-b_pd_min    = kinParams.stg2.beatPeriod;
-b_pd_max    = kinParams.und.beatPeriod;
+b_pd_min    = kinParams.stg2.dur;
+b_pd_max    = kinParams.und.beatPeriod/2;
 kLeft       = -kinParams.stg2.kLeft;
 kRight      = kinParams.stg2.kRight;
-stg3_end    = stg2_end + b_pd_min;
 
-b_period = repmat(linspace(b_pd_min,b_pd_max,size(t,2)),size(t,1),1);
+%Define position-variable period
+b_period = ones(size(t,1),size(t,2));
+b_period(:,i_start) = ...
+    repmat(linspace(b_pd_min,b_pd_max,length(i_start)),size(t,1),1);
 
-% Index of time for duration of stage 3
-t_start = t(find(...
-            t(:,1)>stg2_end,...
-                     1,'first'),1);
-t_end   = t(find(...
-            t(:,1)<=stg3_end,...
-                     1,'last'),1);
-t_idx   = (t>=t_start) & (t<=t_end);
+% Define delay for the start of bending (varies with s)
+delay3 = (s-s_start)/wv_spd;
+
+% Index of time for duration of stage 2
+t_start3 = min(t_end2(:,min(i_start))) + delay3;
+t_end3   = t_start3 + b_period + delay3;
+t_idx3   = (t>=t_end2) & (t<t_end3);
 
 % Calculate wave position
-phi3 = (wv_spd*(t-t_start)-(s-0*s_start))./(wv_spd*b_period);
+phi3 = (wv_spd*(t-t_start3)-(s-s_start))./(wv_spd*b_period);
 
 % Stage 3 curvature
 K3 = ((kRight-kLeft).*(0.5.*cos(pi.*phi3)) + ((-kLeft-kRight)./2));
 
+% Set values before delay to initial curvature
+K3((t-t_start3)<delay3) = kRight;
+
+% Make trunk/cranium rigid
+K3(s<s_start) = 0;
+
 % Zero out values outside of stage 3
-K3 = t_idx .* K3;
+K3 = t_idx3 .* K3;
 
-clear wv_spd b_period kLeft kRight t_idx t_start t_end
+% Clear out temporary variables
+clear wv_spd b_period kLeft kRight t_idx3 t_start3 t_end2 phi3 b_pd_min b_pd_max
 
 
-%% Stage 4
+%% Stage 4 (undulation)
 % Transition into regular undulation
 
 % Define short names
@@ -174,101 +169,84 @@ b_period    = kinParams.und.beatPeriod;
 kLeft       = -kinParams.und.kLeft;
 kRight      = kinParams.und.kRight;
 
-stg4_end    = stg3_end + 2*b_period.*simParams.numTailBeats;
+% Define delay for the start of bending (varies with s)
+delay4 = (s-s_start)/wv_spd;
 
 % Index of time for duration of stage 2
-t_start = t(find(...
-            t(:,1)>stg3_end,...
-                     1,'first'),1);
-t_end   = t(find(...
-            t(:,1)<=stg4_end,...
-                     1,'last'),1);
-t_idx   = (t>=t_start) & (t<=t_end);
+t_start4 = min(t_end3(:,min(i_start)))+ delay4;
+t_end4   = min(t_start4(:)) + b_period.*simParams.numTailBeats;
+t_idx4   = (t>=t_end3) & (t<t_end4);
 
 % Calculate wave position
-phi4 = (wv_spd*(t-t_start)-(s-0*s_start))...
-    /(wv_spd*b_period);
+phi4 = (wv_spd*(t-t_start4)-(s-s_start))./(wv_spd*b_period/2);
 
 % Stage 4 curvature
-K4 = ((kRight-kLeft).*(0.5.*cos(pi.*phi3)) + ((-kLeft-kRight)./2));
+K4 = ((kLeft-kRight).*(0.5.*cos(pi.*phi4)) + ((kLeft+kRight)./2));
+
+% Set values before delay to initial curvature
+K4((t-t_start4)<delay4) = -kinParams.stg2.kLeft;
+
+% Make trunk/cranium rigid
+K4(s<s_start) = 0;
 
 % Zero out values outside of stage 3
-K4 = t_idx .* K4;
+K4 = t_idx4 .* K4;
 
+% Clear out temporary variables
+clear wv_spd b_period kLeft kRight t_start t_end t_idx phi4
 
 
 %% Combine all stages
-K_tot = K1 + K2 + K3 + K4;
 
-% Define delay for the start of bending
-delay = s/wv_spd;
-
-K2((t-t_start)<delay) = kLeft;
-
-K2 = t_idx .* K2;
-
-%k = k .* (s>s_start);
+% Add them together
+K = K1 + K2 + K3 + K4;
 
 
+%% Visualize curvature data
+% Makes a pseudocolor plot of curvature, as a function of s and t
+
+% Idicies for positions to examine
+s1 = 55;
+s2 = 122;
+s3 = 190;
+
+% Exclude zero values
+idx = find(min(K,[],2)~=0);
+
+% New window
+figure
+
+% Plot and tweak
+subplot(4,1,[1:3])
+h = pcolor(s(idx,:),t(idx,:),K(idx,:));
+xlabel('arclength')
+ylabel('time')
+set(h,'EdgeColor','none')
+colorbar
+colormap cool
+
+hold on
+h1 = plot([s(1,s1) s(1,s1)],ylim,'k--');
+h2 = plot([s(1,s2) s(1,s2)],ylim,'b--');
+h3 = plot([s(1,s3) s(1,s3)],ylim,'r--');
+set(h1,'LineWidth',1.5)
+set(h2,'LineWidth',1.5)
+set(h3,'LineWidth',1.5)
+
+subplot(4,1,4)
+h = plot(t(:,s1),K(:,s1),'k-',t(:,s2),K(:,s2),'b-',t(:,s3),K(:,s3),'r-');
+xlabel('time')
+ylabel('K')
+
+clear h1 h2 h3 h s1 s2 s3 
+
+% Animate midline
+%figure
+%animateK(s,t,K)
 
 
-for i = 1:t_tmp
-    
-   
-    
-    
-end
+%% Post-processing
 
-
-% Calculate wave position
-phi = (wv_spd*t2-s)/(wv_spd*b_period);
-
-%t2 = t(t_idx);
-
-% Calculate phase
-L = phi - floor(phi);
-
-% Calculate inflection point age
-N = 2*phi - floor(2*phi);
-N = s/wv_spd + 0.5*N*b_period;
-
-% Which have left/right curvature
-left = L < 0.5;
-right = ~left;
-
-% Calculate curvature function
-kL = 0.5*kLeft*(1-cos(2*pi*N/mLeft));
-kR = 0.5*kRight*(1-cos(2*pi*N/mRight));
-
-% Make curvature
-K2 = -kL.*left + kR.*right;
-
-
-% Set stage 2 curvature equal to values at end of stage 1 
-K2 = K(find(t(:,1)<=kinParams.stg1.dur,1,'last'),:);
-K2 = repmat(K2,max(sum(t_idx(:,1))),1);
-
-
-% Clear short names
-clear wv_spd b_period kLeft kRight right left s_start t_start t_end
-
-% % Curvature during stage 2
-% K_stg2 = K_stage2(s,t,kinParams.s_startBend,kinParams.stg1.dur, ...
-%                   kinParams.stg2.waveSpeed,kinParams.und.kLeft, ...
-%                   kinParams.und.kRight,kinParams.und.mLeft,...
-%                   kinParams.und.mRight,K_stg1(end,:));
-% 
-% % Curvature during undulation
-% K = K_undulation(s,t,kinParams.und.waveSpeed,kinParams.und.beatPeriod,...
-%             kinParams.und.kLeft,kinParams.und.kRight,kinParams.und.mLeft,...
-%             kinParams.und.mRight);
-
-
-% Trim region of zero curvature (i.e. within the cranium)
-K = K .* (s>=kinParams.s_startBend);
-
-
-animateK(s,t,K)
 % Calculate ds
 ds = diff(s,1,2);
 ds = [ds(:,1) ds];
@@ -392,7 +370,7 @@ K = -kL.*left + kR.*right;
 function animateK(s,t,K)
 
 % Don't animate times with no curvature
-idx = find(~(K(:,1)==0));
+idx = find(~(K(:,end)==0));
 
 % Calculate ds
 ds = diff(s,1,2);
@@ -419,19 +397,6 @@ for i = 1:length(idx)
     axis equal
     pause(.001)
 end
-
-
-function plot_pcolor(s,t,M)
-
-% Exclude zero values
-idx = find(min(M,[],2)~=0);
-
-% Plot and tweak
-h = pcolor(s(idx,:),t(idx,:),M(idx,:));
-xlabel('arclength')
-ylabel('time')
-set(h,'EdgeColor','none')
-colorbar
 
 
 
